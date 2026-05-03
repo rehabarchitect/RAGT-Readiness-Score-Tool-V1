@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RG-RST — Robot Gait Readiness Scoring Tool</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #050d1a;
+    --surface: #0a1628;
+    --surface2: #0f1e35;
+    --surface3: #162440;
+    --border: #1e3254;
+    --border-bright: #2a4a7a;
+    --cyan: #00d4ff;
+    --cyan-dim: rgba(0,212,255,0.12);
+    --cyan-glow: rgba(0,212,255,0.25);
+    --blue: #0ea5e9;
+    --blue-dim: rgba(14,165,233,0.1);
+    --teal: #00b4a0;
+    --teal-dim: rgba(0,180,160,0.12);
+    --red: #ff4444;
+    --red-dim: rgba(255,68,68,0.12);
+    --orange: #ff8c00;
+    --orange-dim: rgba(255,140,0,0.12);
+    --yellow: #ffd700;
+    --yellow-dim: rgba(255,215,0,0.1);
+    --green: #00e676;
+    --green-dim: rgba(0,230,118,0.1);
+    --text: #e2eeff;
+    --text-secondary: #8ba8cc;
+    --text-muted: #4a6380;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+    --radius: 4px;
+    --radius-md: 8px;
+  }
+
+- { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+font-family: var(–sans);
+background: var(–bg);
+color: var(–text);
+min-height: 100vh;
+padding: 24px 16px 80px;
+background-image:
+radial-gradient(ellipse 80% 50% at 50% -10%, rgba(0,212,255,0.06) 0%, transparent 60%),
+linear-gradient(180deg, #050d1a 0%, #030a14 100%);
+}
+
+.wrapper {
+max-width: 760px;
+margin: 0 auto;
+}
+
+/* Scanline overlay */
+body::before {
+content: ‘’;
+position: fixed;
+inset: 0;
+background: repeating-linear-gradient(
+0deg,
+transparent,
+transparent 2px,
+rgba(0,0,0,0.03) 2px,
+rgba(0,0,0,0.03) 4px
+);
+pointer-events: none;
+z-index: 1000;
+}
+
+/* ── HEADER ── */
+.header {
+background: var(–surface);
+border: 1px solid var(–border);
+border-bottom: none;
+border-radius: var(–radius-md) var(–radius-md) 0 0;
+padding: 28px 32px 24px;
+position: relative;
+overflow: hidden;
+}
+.header::before {
+content: ‘’;
+position: absolute;
+top: 0; left: 0; right: 0;
+height: 2px;
+background: linear-gradient(90deg, transparent, var(–cyan), var(–blue), transparent);
+animation: scanH 3s ease-in-out infinite;
+}
+@keyframes scanH {
+0%, 100% { opacity: 0.5; }
+50% { opacity: 1; }
+}
+
+.header-top {
+display: flex;
+align-items: flex-start;
+justify-content: space-between;
+margin-bottom: 16px;
+}
+.header-badge {
+display: inline-flex;
+align-items: center;
+gap: 6px;
+font-family: var(–mono);
+font-size: 10px;
+font-weight: 600;
+letter-spacing: 0.15em;
+text-transform: uppercase;
+color: var(–cyan);
+background: var(–cyan-dim);
+border: 1px solid rgba(0,212,255,0.3);
+padding: 4px 10px;
+border-radius: var(–radius);
+}
+.header-badge::before {
+content: ‘’;
+width: 6px; height: 6px;
+background: var(–cyan);
+border-radius: 50%;
+animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse {
+0%, 100% { opacity: 1; transform: scale(1); }
+50% { opacity: 0.4; transform: scale(0.7); }
+}
+.version-tag {
+font-family: var(–mono);
+font-size: 10px;
+color: var(–text-muted);
+background: var(–surface3);
+border: 1px solid var(–border);
+padding: 4px 8px;
+border-radius: var(–radius);
+}
+
+.header-title {
+font-family: var(–mono);
+font-size: 22px;
+font-weight: 600;
+color: #fff;
+letter-spacing: -0.02em;
+line-height: 1.2;
+margin-bottom: 4px;
+}
+.header-title .accent { color: var(–cyan); }
+.header-subtitle {
+font-family: var(–mono);
+font-size: 11px;
+color: var(–text-muted);
+letter-spacing: 0.08em;
+}
+
+/* Corner decorations */
+.corner {
+position: absolute;
+width: 20px; height: 20px;
+border-color: var(–cyan);
+border-style: solid;
+opacity: 0.3;
+}
+.corner-tl { top: 8px; left: 8px; border-width: 1px 0 0 1px; }
+.corner-tr { top: 8px; right: 8px; border-width: 1px 1px 0 0; }
+.corner-bl { bottom: 8px; left: 8px; border-width: 0 0 1px 1px; }
+.corner-br { bottom: 8px; right: 8px; border-width: 0 1px 1px 0; }
+
+/* ── PATIENT INFO ── */
+.patient-card {
+background: var(–surface);
+border: 1px solid var(–border);
+border-top: none;
+padding: 20px 24px;
+}
+.section-label {
+font-family: var(–mono);
+font-size: 9px;
+font-weight: 600;
+letter-spacing: 0.2em;
+text-transform: uppercase;
+color: var(–text-muted);
+margin-bottom: 14px;
+display: flex;
+align-items: center;
+gap: 8px;
+}
+.section-label::after {
+content: ‘’;
+flex: 1;
+height: 1px;
+background: var(–border);
+}
+
+.info-grid {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 10px 16px;
+}
+.info-group label {
+display: block;
+font-family: var(–mono);
+font-size: 9px;
+font-weight: 600;
+letter-spacing: 0.15em;
+text-transform: uppercase;
+color: var(–text-muted);
+margin-bottom: 5px;
+}
+.info-group input {
+width: 100%;
+background: var(–surface3);
+border: 1px solid var(–border);
+border-radius: var(–radius);
+padding: 8px 10px;
+font-family: var(–mono);
+font-size: 12px;
+color: var(–text);
+outline: none;
+transition: border-color 0.2s, box-shadow 0.2s;
+-webkit-appearance: none;
+}
+.info-group input:focus {
+border-color: var(–cyan);
+box-shadow: 0 0 0 2px var(–cyan-dim);
+background: var(–surface2);
+}
+.info-group input::placeholder { color: var(–text-muted); }
+.info-group input[type=“date”] { color-scheme: dark; }
+
+/* ── DOMAINS ── */
+.domains {
+background: var(–surface);
+border: 1px solid var(–border);
+border-top: none;
+padding: 12px 0;
+}
+.domain {
+padding: 0 16px;
+margin: 4px 0;
+}
+.domain-inner {
+border: 1px solid var(–border);
+border-radius: var(–radius-md);
+overflow: hidden;
+transition: border-color 0.2s, box-shadow 0.2s;
+}
+.domain-inner:hover {
+border-color: var(–border-bright);
+}
+.domain-inner.open {
+border-color: rgba(0,212,255,0.25);
+box-shadow: 0 0 20px rgba(0,212,255,0.05);
+}
+
+.domain-header {
+display: flex;
+align-items: center;
+justify-content: space-between;
+padding: 12px 14px;
+cursor: pointer;
+background: var(–surface2);
+user-select: none;
+gap: 10px;
+}
+.domain-inner.open .domain-header {
+background: var(–surface3);
+}
+
+.domain-num {
+font-family: var(–mono);
+font-size: 10px;
+font-weight: 600;
+color: var(–cyan);
+background: var(–cyan-dim);
+border: 1px solid rgba(0,212,255,0.2);
+border-radius: var(–radius);
+padding: 2px 7px;
+flex-shrink: 0;
+letter-spacing: 0.05em;
+}
+.domain-name {
+font-size: 13px;
+font-weight: 500;
+color: var(–text);
+flex: 1;
+letter-spacing: -0.01em;
+}
+.domain-score-badge {
+font-family: var(–mono);
+font-size: 12px;
+color: var(–text-muted);
+background: var(–surface);
+border: 1px solid var(–border);
+border-radius: var(–radius);
+padding: 2px 8px;
+min-width: 44px;
+text-align: center;
+transition: all 0.2s;
+flex-shrink: 0;
+}
+.domain-score-badge.scored {
+color: var(–cyan);
+border-color: rgba(0,212,255,0.3);
+background: var(–cyan-dim);
+}
+.chevron {
+color: var(–text-muted);
+transition: transform 0.25s;
+flex-shrink: 0;
+}
+.domain-inner.open .chevron { transform: rotate(180deg); }
+
+.domain-body {
+display: none;
+padding: 4px 14px 12px;
+background: var(–surface);
+border-top: 1px solid var(–border);
+}
+.domain-inner.open .domain-body { display: block; }
+
+.option-list { list-style: none; }
+.option-item {
+display: flex;
+align-items: flex-start;
+gap: 10px;
+padding: 8px 10px;
+border-radius: var(–radius);
+cursor: pointer;
+transition: background 0.15s;
+margin: 2px 0;
+border: 1px solid transparent;
+}
+.option-item:hover {
+background: var(–surface2);
+border-color: var(–border);
+}
+.option-item.selected {
+background: var(–cyan-dim);
+border-color: rgba(0,212,255,0.25);
+}
+.option-item input[type=“radio”] { display: none; }
+
+.option-dot {
+width: 18px; height: 18px;
+border-radius: 50%;
+border: 1.5px solid var(–border-bright);
+flex-shrink: 0;
+margin-top: 1px;
+display: flex;
+align-items: center;
+justify-content: center;
+transition: all 0.15s;
+background: var(–surface3);
+}
+.option-dot::after {
+content: ‘’;
+width: 7px; height: 7px;
+border-radius: 50%;
+background: var(–cyan);
+opacity: 0;
+transition: opacity 0.15s;
+box-shadow: 0 0 6px var(–cyan);
+}
+.option-item.selected .option-dot {
+border-color: var(–cyan);
+background: var(–cyan-dim);
+}
+.option-item.selected .option-dot::after { opacity: 1; }
+
+.option-score {
+font-family: var(–mono);
+font-size: 11px;
+font-weight: 600;
+color: var(–text-muted);
+background: var(–surface3);
+border: 1px solid var(–border);
+border-radius: var(–radius);
+padding: 1px 6px;
+flex-shrink: 0;
+margin-top: 1px;
+}
+.option-item.selected .option-score {
+background: var(–cyan-dim);
+color: var(–cyan);
+border-color: rgba(0,212,255,0.3);
+}
+.option-label {
+font-size: 12.5px;
+color: var(–text-secondary);
+line-height: 1.4;
+}
+.option-item.selected .option-label { color: var(–text); }
+
+/* ── SCORE PANEL ── */
+.score-panel {
+background: var(–surface);
+border: 1px solid var(–border);
+border-top: none;
+padding: 24px;
+}
+
+.score-display {
+background: var(–surface2);
+border: 1px solid var(–border);
+border-radius: var(–radius-md);
+padding: 20px 24px;
+margin-bottom: 20px;
+position: relative;
+overflow: hidden;
+}
+.score-display::before {
+content: ‘’;
+position: absolute;
+top: 0; left: 0; right: 0;
+height: 1px;
+background: linear-gradient(90deg, transparent, var(–cyan-glow), transparent);
+}
+
+.score-inner {
+display: flex;
+align-items: center;
+gap: 24px;
+}
+.score-left { flex-shrink: 0; }
+.score-label {
+font-family: var(–mono);
+font-size: 9px;
+font-weight: 600;
+letter-spacing: 0.2em;
+text-transform: uppercase;
+color: var(–text-muted);
+margin-bottom: 4px;
+}
+.score-value {
+display: flex;
+align-items: baseline;
+gap: 2px;
+}
+.score-number {
+font-family: var(–mono);
+font-size: 52px;
+font-weight: 600;
+color: var(–cyan);
+line-height: 1;
+text-shadow: 0 0 30px var(–cyan-glow);
+transition: color 0.4s;
+}
+.score-denom {
+font-family: var(–mono);
+font-size: 20px;
+color: var(–text-muted);
+}
+
+.score-right { flex: 1; }
+.score-progress-track {
+height: 6px;
+background: var(–surface3);
+border-radius: 99px;
+overflow: hidden;
+border: 1px solid var(–border);
+margin-bottom: 8px;
+}
+.score-progress-fill {
+height: 100%;
+border-radius: 99px;
+transition: width 0.4s cubic-bezier(.4,0,.2,1), background 0.4s;
+width: 0%;
+background: var(–cyan);
+box-shadow: 0 0 10px var(–cyan-glow);
+}
+.score-domains-completed {
+font-family: var(–mono);
+font-size: 10px;
+color: var(–text-muted);
+letter-spacing: 0.08em;
+}
+
+/* Status grid */
+.status-grid {
+display: grid;
+grid-template-columns: repeat(8, 1fr);
+gap: 4px;
+margin-top: 12px;
+}
+.status-pip {
+height: 3px;
+background: var(–surface3);
+border-radius: 99px;
+transition: background 0.3s;
+border: 1px solid var(–border);
+}
+.status-pip.done { background: var(–cyan); box-shadow: 0 0 6px var(–cyan-glow); }
+
+/* ── INTERPRETATIONS ── */
+.interpretation {
+border-radius: var(–radius-md);
+padding: 14px 18px;
+display: none;
+animation: fadeIn 0.3s ease;
+margin-bottom: 16px;
+border: 1px solid;
+position: relative;
+overflow: hidden;
+}
+.interpretation::before {
+content: ‘’;
+position: absolute;
+left: 0; top: 0; bottom: 0;
+width: 3px;
+}
+.interpretation.show { display: flex; align-items: flex-start; gap: 12px; }
+@keyframes fadeIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }
+
+.interp-red { background: var(–red-dim); border-color: rgba(255,68,68,0.2); color: var(–red); }
+.interp-red::before { background: var(–red); }
+.interp-orange { background: var(–orange-dim); border-color: rgba(255,140,0,0.2); color: var(–orange); }
+.interp-orange::before { background: var(–orange); }
+.interp-yellow { background: var(–yellow-dim); border-color: rgba(255,215,0,0.2); color: var(–yellow); }
+.interp-yellow::before { background: var(–yellow); }
+.interp-green { background: var(–green-dim); border-color: rgba(0,230,118,0.2); color: var(–green); }
+.interp-green::before { background: var(–green); }
+
+.interp-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+.interp-range {
+font-family: var(–mono);
+font-size: 9px;
+font-weight: 600;
+letter-spacing: 0.15em;
+margin-bottom: 2px;
+opacity: 0.6;
+}
+.interp-title { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+.interp-desc { font-size: 12px; line-height: 1.5; opacity: 0.75; color: var(–text-secondary); }
+
+/* ── ACTION TAGS ── */
+.action-section { margin-top: 16px; }
+.action-title {
+font-family: var(–mono);
+font-size: 9px;
+font-weight: 600;
+letter-spacing: 0.2em;
+text-transform: uppercase;
+color: var(–text-muted);
+margin-bottom: 10px;
+}
+.action-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.action-tag {
+display: flex;
+align-items: center;
+gap: 6px;
+background: var(–surface2);
+border: 1px solid var(–border);
+border-radius: var(–radius);
+padding: 5px 10px;
+font-family: var(–mono);
+font-size: 11px;
+color: var(–text-muted);
+font-weight: 500;
+transition: all 0.2s;
+}
+.action-tag.active {
+border-color: rgba(255,140,0,0.3);
+color: var(–orange);
+background: var(–orange-dim);
+}
+.action-tag .dot {
+width: 6px; height: 6px;
+border-radius: 50%;
+background: var(–border);
+transition: background 0.2s;
+flex-shrink: 0;
+}
+.action-tag.active .dot {
+background: var(–orange);
+box-shadow: 0 0 6px rgba(255,140,0,0.5);
+}
+
+/* ── BUTTONS ── */
+.btn-row {
+display: flex;
+gap: 8px;
+margin-top: 16px;
+flex-wrap: wrap;
+}
+.btn {
+display: inline-flex;
+align-items: center;
+gap: 6px;
+padding: 8px 16px;
+border-radius: var(–radius);
+font-family: var(–mono);
+font-size: 11px;
+font-weight: 600;
+letter-spacing: 0.05em;
+cursor: pointer;
+border: 1px solid;
+transition: all 0.18s;
+}
+.btn-primary {
+background: var(–cyan-dim);
+color: var(–cyan);
+border-color: rgba(0,212,255,0.3);
+}
+.btn-primary:hover {
+background: rgba(0,212,255,0.2);
+box-shadow: 0 0 16px var(–cyan-dim);
+}
+.btn-ghost {
+background: transparent;
+color: var(–text-muted);
+border-color: var(–border);
+}
+.btn-ghost:hover {
+border-color: var(–border-bright);
+color: var(–text-secondary);
+}
+
+/* ── NOTES ── */
+.notes-section {
+background: var(–surface);
+border: 1px solid var(–border);
+border-top: none;
+padding: 20px 24px;
+}
+.notes-area {
+width: 100%;
+background: var(–surface2);
+border: 1px solid var(–border);
+border-radius: var(–radius);
+padding: 10px 12px;
+font-family: var(–mono);
+font-size: 12px;
+color: var(–text);
+resize: vertical;
+min-height: 80px;
+outline: none;
+transition: border-color 0.2s, box-shadow 0.2s;
+line-height: 1.6;
+}
+.notes-area:focus {
+border-color: var(–cyan);
+box-shadow: 0 0 0 2px var(–cyan-dim);
+}
+.notes-area::placeholder { color: var(–text-muted); }
+
+/* ── FOOTER ── */
+.footer-card {
+background: var(–surface);
+border: 1px solid var(–border);
+border-top: 1px solid var(–border);
+border-radius: 0 0 var(–radius-md) var(–radius-md);
+padding: 14px 24px;
+display: flex;
+align-items: flex-start;
+gap: 10px;
+position: relative;
+}
+.footer-card::before {
+content: ‘’;
+position: absolute;
+bottom: 0; left: 0; right: 0;
+height: 1px;
+background: linear-gradient(90deg, transparent, rgba(0,212,255,0.15), transparent);
+}
+.footer-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; color: var(–yellow); }
+.footer-text {
+font-family: var(–mono);
+font-size: 10px;
+color: var(–text-muted);
+line-height: 1.6;
+}
+.footer-text strong { color: var(–yellow); font-weight: 600; }
+
+.divider { height: 1px; background: var(–border); }
+
+/* ── PRINT ── */
+@media print {
+body { background: #fff; padding: 0; }
+body::before { display: none; }
+.btn-row, .btn { display: none !important; }
+.domain-body { display: block !important; }
+.wrapper { max-width: 100%; }
+:root {
+–bg: #fff; –surface: #fff; –surface2: #f5f5f5; –surface3: #eee;
+–text: #000; –text-secondary: #333; –text-muted: #666;
+–border: #ccc; –border-bright: #999; –cyan: #0077aa;
+–cyan-dim: rgba(0,119,170,0.1);
+}
+}
+
+@media (max-width: 480px) {
+.info-grid { grid-template-columns: 1fr; }
+.score-inner { flex-direction: column; align-items: flex-start; gap: 12px; }
+.score-right { width: 100%; }
+.header-title { font-size: 17px; }
+.score-number { font-size: 40px; }
+.status-grid { grid-template-columns: repeat(8, 1fr); }
+}
+</style>
+
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- Header -->
+
+  <div class="header">
+    <div class="corner corner-tl"></div>
+    <div class="corner corner-tr"></div>
+    <div class="corner corner-bl"></div>
+    <div class="corner corner-br"></div>
+    <div class="header-top">
+      <div class="header-badge">Clinical Screening Tool</div>
+      <div class="version-tag">RG-RST v1.0</div>
+    </div>
+    <div class="header-title"><span class="accent">Robot Gait</span> Readiness Scoring Tool</div>
+    <div class="header-subtitle" style="margin-top:6px">EksoNR &nbsp;/&nbsp; R-GAIT &nbsp;/&nbsp; HIWIN &nbsp;·&nbsp; Rehabilitation Engineering Division</div>
+  </div>
+
+  <!-- Patient Info -->
+
+  <div class="patient-card">
+    <div class="section-label">Patient Information</div>
+    <div class="info-grid">
+      <div class="info-group">
+        <label>Patient Name</label>
+        <input type="text" placeholder="Full name" id="patientName">
+      </div>
+      <div class="info-group">
+        <label>HN</label>
+        <input type="text" placeholder="Hospital number" id="hn">
+      </div>
+      <div class="info-group">
+        <label>Date</label>
+        <input type="date" id="date">
+      </div>
+      <div class="info-group">
+        <label>Assessor</label>
+        <input type="text" placeholder="PT name / license no." id="assessor">
+      </div>
+      <div class="info-group" style="grid-column:1/-1">
+        <label>Diagnosis</label>
+        <input type="text" placeholder="e.g. Stroke, SCI, TBI" id="diagnosis">
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Domains -->
+
+  <div class="domains" id="domainsContainer"></div>
+
+  <!-- Score Panel -->
+
+  <div class="score-panel">
+    <div class="score-display">
+      <div class="score-inner">
+        <div class="score-left">
+          <div class="score-label">Total Score</div>
+          <div class="score-value">
+            <span class="score-number" id="totalScore">0</span>
+            <span class="score-denom">/24</span>
+          </div>
+        </div>
+        <div class="score-right">
+          <div class="score-progress-track">
+            <div class="score-progress-fill" id="progressFill"></div>
+          </div>
+          <div class="score-domains-completed" id="domainsCompleted">0 / 8 domains scored</div>
+          <div class="status-grid" id="statusGrid"></div>
+        </div>
+      </div>
+    </div>
+
+```
+<!-- Interpretations -->
+<div class="interpretation interp-red" id="interp-red">
+  <div class="interp-icon">🔴</div>
+  <div>
+    <div class="interp-range">SCORE 0 – 10</div>
+    <div class="interp-title">Not Ready for Robot-Assisted Gait Training</div>
+    <div class="interp-desc">Recommend pre-rehabilitation program focusing on ROM, trunk control, and cardiopulmonary endurance before reassessment.</div>
+  </div>
+</div>
+<div class="interpretation interp-orange" id="interp-orange">
+  <div class="interp-icon">🟠</div>
+  <div>
+    <div class="interp-range">SCORE 11 – 16</div>
+    <div class="interp-title">Conditional Readiness</div>
+    <div class="interp-desc">Requires high assistance and close monitoring. Short-duration sessions recommended with careful vital sign surveillance.</div>
+  </div>
+</div>
+<div class="interpretation interp-yellow" id="interp-yellow">
+  <div class="interp-icon">🟡</div>
+  <div>
+    <div class="interp-range">SCORE 17 – 21</div>
+    <div class="interp-title">Suitable Candidate</div>
+    <div class="interp-desc">Standard robot-assisted gait training recommended. Select device based on primary goal and neuro control level.</div>
+  </div>
+</div>
+<div class="interpretation interp-green" id="interp-green">
+  <div class="interp-icon">🟢</div>
+  <div>
+    <div class="interp-range">SCORE 22 – 24</div>
+    <div class="interp-title">Optimal Candidate</div>
+    <div class="interp-desc">High-intensity robotic gait training possible. Consider progressive challenge and functional goal setting.</div>
+  </div>
+</div>
+
+<!-- Action Guidance -->
+<div class="action-section">
+  <div class="action-title">// Clinical Action Guidance</div>
+  <div class="action-tags">
+    <div class="action-tag" id="act-rom"><span class="dot"></span>ROM limitation → Stretching / Positioning</div>
+    <div class="action-tag" id="act-trunk"><span class="dot"></span>Trunk instability → Sitting Balance Training</div>
+    <div class="action-tag" id="act-endurance"><span class="dot"></span>Low endurance → Graded Aerobic Conditioning</div>
+    <div class="action-tag" id="act-motivation"><span class="dot"></span>Low motivation → Education + Visual Feedback</div>
+    <div class="action-tag" id="act-medical"><span class="dot"></span>Medical instability → Stabilize Vitals First</div>
+  </div>
+</div>
+
+<div class="btn-row">
+  <button class="btn btn-primary" onclick="window.print()">⬡ Print / Save PDF</button>
+  <button class="btn btn-ghost" onclick="resetAll()">↺ Reset Form</button>
+</div>
+```
+
+  </div>
+
+  <!-- Notes -->
+
+  <div class="notes-section">
+    <div class="section-label">Clinical Notes</div>
+    <textarea class="notes-area" placeholder="// Clinical observations, device selection rationale, follow-up plan..."></textarea>
+  </div>
+
+  <!-- Footer -->
+
+  <div class="footer-card">
+    <div class="footer-icon">⚠</div>
+    <div class="footer-text">
+      <strong>Clinical Use Statement:</strong> This tool is designed to assist clinical decision-making for robot-assisted gait training. Final decision should be made by the multidisciplinary rehabilitation team.
+    </div>
+  </div>
+
+</div>
+
+<script>
+const domains = [
+  { id:'motivation', name:'Motivation & Engagement', options:[{score:0,label:'Refuses participation / non-cooperative'},{score:1,label:'Reluctant, requires high encouragement'},{score:2,label:'Cooperative, willing to try'},{score:3,label:'Highly motivated, actively requests walking training'}], actionId:'act-motivation' },
+  { id:'rom', name:'Lower Limb Functional ROM (Hip / Knee / Ankle)', options:[{score:0,label:'Severe limitation, not compatible with robot'},{score:1,label:'Significant limitation, requires pre-stretching / high assistance'},{score:2,label:'Functional with device adjustment'},{score:3,label:'Adequate ROM for safe training'}], actionId:'act-rom' },
+  { id:'trunk', name:'Trunk Control', options:[{score:0,label:'Unable to sit independently'},{score:1,label:'Requires continuous support'},{score:2,label:'Independent sitting with sway'},{score:3,label:'Stable trunk control'}], actionId:'act-trunk' },
+  { id:'motor', name:'Motor Control / Lower Limb Coordination', options:[{score:0,label:'No voluntary control / severe spasticity'},{score:1,label:'Poor selective control, synergy dominance'},{score:2,label:'Partial selective control'},{score:3,label:'Good voluntary stepping initiation'}], actionId:null },
+  { id:'cardio', name:'Cardiopulmonary Endurance', options:[{score:0,label:'Unable to tolerate sitting/standing activity'},{score:1,label:'Tolerates 5–10 minutes activity'},{score:2,label:'Tolerates 10–20 minutes activity'},{score:3,label:'Tolerates >20–30 minutes activity'}], actionId:'act-endurance' },
+  { id:'cognition', name:'Cognition & Communication', options:[{score:0,label:'Unable to follow commands'},{score:1,label:'Inconsistent response to simple commands'},{score:2,label:'Able to follow commands'},{score:3,label:'Good communication and symptom reporting'}], actionId:null },
+  { id:'medical', name:'Medical Stability / Safety', options:[{score:0,label:'Hemodynamically unstable / severe orthostatic hypotension'},{score:1,label:'Borderline stability'},{score:2,label:'Stable with precautions'},{score:3,label:'Fully stable'}], actionId:'act-medical' },
+  { id:'device', name:'Body & Device Compatibility', options:[{score:0,label:'Cannot be safely fitted into device'},{score:1,label:'Difficult fitting / high risk setup'},{score:2,label:'Usable with adjustments'},{score:3,label:'Safe and smooth device setup'}], actionId:null },
+];
+
+const scores = {};
+
+function buildDomains() {
+  const container = document.getElementById('domainsContainer');
+  const grid = document.getElementById('statusGrid');
+
+  domains.forEach((d, i) => {
+    // pip
+    const pip = document.createElement('div');
+    pip.className = 'status-pip';
+    pip.id = 'pip-' + d.id;
+    grid.appendChild(pip);
+
+    const domainEl = document.createElement('div');
+    domainEl.className = 'domain';
+    domainEl.innerHTML = `
+      <div class="domain-inner" id="inner-${d.id}">
+        <div class="domain-header" onclick="toggleDomain('${d.id}')">
+          <span class="domain-num">${String(i+1).padStart(2,'0')}</span>
+          <span class="domain-name">${d.name}</span>
+          <span class="domain-score-badge" id="badge-${d.id}">—/3</span>
+          <svg class="chevron" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </div>
+        <div class="domain-body">
+          <ul class="option-list">
+            ${d.options.map(opt => `
+              <li class="option-item" id="opt-${d.id}-${opt.score}" onclick="selectOption('${d.id}', ${opt.score})">
+                <div class="option-dot"></div>
+                <span class="option-score">${opt.score}</span>
+                <span class="option-label">${opt.label}</span>
+              </li>
+            `).join('')}
+          </ul>
+        </div>
+      </div>`;
+    container.appendChild(domainEl);
+    if (i === 0) toggleDomain(d.id);
+  });
+}
+
+function toggleDomain(id) {
+  document.getElementById('inner-' + id).classList.toggle('open');
+}
+
+function selectOption(domainId, score) {
+  scores[domainId] = score;
+  const domain = domains.find(d => d.id === domainId);
+  domain.options.forEach(opt => {
+    document.getElementById(`opt-${domainId}-${opt.score}`).classList.toggle('selected', opt.score === score);
+  });
+  const badge = document.getElementById('badge-' + domainId);
+  badge.textContent = `${score}/3`;
+  badge.classList.add('scored');
+  document.getElementById('pip-' + domainId).classList.add('done');
+
+  const idx = domains.findIndex(d => d.id === domainId);
+  if (idx < domains.length - 1) {
+    const nextId = domains[idx + 1].id;
+    if (!document.getElementById('inner-' + nextId).classList.contains('open')) {
+      setTimeout(() => toggleDomain(nextId), 200);
+    }
+  }
+  updateScore();
+}
+
+function updateScore() {
+  const completed = Object.keys(scores).length;
+  const total = Object.values(scores).reduce((a, b) => a + b, 0);
+
+  document.getElementById('totalScore').textContent = total;
+  document.getElementById('domainsCompleted').textContent = `${completed} / 8 domains scored`;
+
+  const pct = (total / 24) * 100;
+  const fill = document.getElementById('progressFill');
+  fill.style.width = pct + '%';
+
+  const numEl = document.getElementById('totalScore');
+  if (total <= 10) {
+    fill.style.background = '#ff4444';
+    fill.style.boxShadow = '0 0 10px rgba(255,68,68,0.4)';
+    numEl.style.color = completed > 0 ? '#ff4444' : 'var(--cyan)';
+    numEl.style.textShadow = completed > 0 ? '0 0 30px rgba(255,68,68,0.3)' : '';
+  } else if (total <= 16) {
+    fill.style.background = '#ff8c00';
+    fill.style.boxShadow = '0 0 10px rgba(255,140,0,0.4)';
+    numEl.style.color = '#ff8c00';
+    numEl.style.textShadow = '0 0 30px rgba(255,140,0,0.3)';
+  } else if (total <= 21) {
+    fill.style.background = '#ffd700';
+    fill.style.boxShadow = '0 0 10px rgba(255,215,0,0.4)';
+    numEl.style.color = '#ffd700';
+    numEl.style.textShadow = '0 0 30px rgba(255,215,0,0.3)';
+  } else {
+    fill.style.background = '#00e676';
+    fill.style.boxShadow = '0 0 10px rgba(0,230,118,0.4)';
+    numEl.style.color = '#00e676';
+    numEl.style.textShadow = '0 0 30px rgba(0,230,118,0.3)';
+  }
+
+  ['red','orange','yellow','green'].forEach(c => document.getElementById('interp-' + c).classList.remove('show'));
+  if (completed > 0) {
+    if (total <= 10) document.getElementById('interp-red').classList.add('show');
+    else if (total <= 16) document.getElementById('interp-orange').classList.add('show');
+    else if (total <= 21) document.getElementById('interp-yellow').classList.add('show');
+    else document.getElementById('interp-green').classList.add('show');
+  }
+
+  domains.forEach(d => {
+    if (d.actionId) {
+      const sc = scores[d.id];
+      document.getElementById(d.actionId).classList.toggle('active', sc !== undefined && sc <= 1);
+    }
+  });
+}
+
+function resetAll() {
+  if (!confirm('Reset all scores?')) return;
+  Object.keys(scores).forEach(k => delete scores[k]);
+  domains.forEach(d => {
+    d.options.forEach(opt => document.getElementById(`opt-${d.id}-${opt.score}`).classList.remove('selected'));
+    const badge = document.getElementById('badge-' + d.id);
+    badge.textContent = '—/3';
+    badge.classList.remove('scored');
+    document.getElementById('inner-' + d.id).classList.remove('open');
+    document.getElementById('pip-' + d.id).classList.remove('done');
+  });
+  toggleDomain(domains[0].id);
+  updateScore();
+  ['patientName','hn','date','assessor','diagnosis'].forEach(id => document.getElementById(id).value = '');
+  document.querySelector('.notes-area').value = '';
+  const num = document.getElementById('totalScore');
+  num.style.color = 'var(--cyan)';
+  num.style.textShadow = '0 0 30px var(--cyan-glow)';
+}
+
+document.getElementById('date').valueAsDate = new Date();
+buildDomains();
+updateScore();
+</script>
+
+</body>
+</html>
