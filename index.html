@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RG-RST — Robot Gait Readiness Scoring Tool</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f0f2f5;
+    --surface: #ffffff;
+    --surface2: #f7f8fa;
+    --border: #e2e6ec;
+    --navy: #1a2744;
+    --navy-light: #243560;
+    --blue: #2563eb;
+    --blue-light: #dbeafe;
+    --red: #dc2626;
+    --red-light: #fee2e2;
+    --orange: #ea580c;
+    --orange-light: #ffedd5;
+    --yellow: #ca8a04;
+    --yellow-light: #fef9c3;
+    --green: #16a34a;
+    --green-light: #dcfce7;
+    --emerald: #059669;
+    --emerald-light: #d1fae5;
+    --text: #1e293b;
+    --text-secondary: #64748b;
+    --text-muted: #94a3b8;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+- { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+font-family: ‘DM Sans’, sans-serif;
+background: var(–bg);
+color: var(–text);
+min-height: 100vh;
+padding: 24px 16px 60px;
+}
+
+.wrapper {
+max-width: 760px;
+margin: 0 auto;
+}
+
+/* Header */
+.header {
+background: var(–navy);
+border-radius: var(–radius) var(–radius) 0 0;
+padding: 28px 32px 24px;
+position: relative;
+overflow: hidden;
+}
+.header::before {
+content: ‘’;
+position: absolute;
+top: -40px; right: -40px;
+width: 200px; height: 200px;
+background: rgba(255,255,255,0.04);
+border-radius: 50%;
+}
+.header::after {
+content: ‘’;
+position: absolute;
+bottom: -60px; left: 30px;
+width: 140px; height: 140px;
+background: rgba(255,255,255,0.03);
+border-radius: 50%;
+}
+.header-badge {
+display: inline-flex;
+align-items: center;
+gap: 6px;
+background: rgba(37,99,235,0.3);
+border: 1px solid rgba(37,99,235,0.5);
+color: #93c5fd;
+font-size: 11px;
+font-weight: 600;
+letter-spacing: 0.08em;
+text-transform: uppercase;
+padding: 4px 10px;
+border-radius: 20px;
+margin-bottom: 12px;
+}
+.header-title {
+font-family: ‘Playfair Display’, serif;
+font-size: 26px;
+color: #fff;
+line-height: 1.2;
+margin-bottom: 4px;
+}
+.header-abbr {
+color: #93c5fd;
+}
+.header-subtitle {
+font-size: 13px;
+color: #94a3b8;
+font-weight: 400;
+}
+
+/* Patient Info */
+.patient-card {
+background: var(–surface);
+border: 1px solid var(–border);
+border-top: none;
+padding: 20px 24px;
+}
+.info-grid {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 12px 20px;
+}
+.info-group label {
+display: block;
+font-size: 11px;
+font-weight: 600;
+letter-spacing: 0.06em;
+text-transform: uppercase;
+color: var(–text-muted);
+margin-bottom: 4px;
+}
+.info-group input {
+width: 100%;
+background: var(–surface2);
+border: 1.5px solid var(–border);
+border-radius: var(–radius-sm);
+padding: 8px 12px;
+font-family: ‘DM Sans’, sans-serif;
+font-size: 14px;
+color: var(–text);
+outline: none;
+transition: border-color 0.2s;
+}
+.info-group input:focus {
+border-color: var(–blue);
+background: #fff;
+}
+
+/* Domains */
+.domains {
+background: var(–surface);
+border: 1px solid var(–border);
+border-top: none;
+padding: 8px 0;
+}
+
+.domain {
+padding: 0 24px;
+margin: 4px 0;
+}
+.domain-inner {
+border: 1.5px solid var(–border);
+border-radius: var(–radius);
+overflow: hidden;
+transition: border-color 0.2s, box-shadow 0.2s;
+}
+.domain-inner:hover {
+border-color: #c7d2fe;
+box-shadow: 0 2px 12px rgba(37,99,235,0.07);
+}
+
+.domain-header {
+display: flex;
+align-items: center;
+justify-content: space-between;
+padding: 14px 16px;
+cursor: pointer;
+background: var(–surface2);
+user-select: none;
+gap: 12px;
+}
+.domain-num {
+font-family: ‘DM Mono’, monospace;
+font-size: 11px;
+font-weight: 500;
+color: var(–text-muted);
+background: var(–border);
+border-radius: 6px;
+padding: 2px 7px;
+flex-shrink: 0;
+}
+.domain-name {
+font-size: 14px;
+font-weight: 600;
+color: var(–navy);
+flex: 1;
+}
+.domain-score-badge {
+font-family: ‘DM Mono’, monospace;
+font-size: 13px;
+font-weight: 500;
+color: var(–text-muted);
+background: #fff;
+border: 1.5px solid var(–border);
+border-radius: 8px;
+padding: 3px 10px;
+min-width: 52px;
+text-align: center;
+transition: all 0.2s;
+flex-shrink: 0;
+}
+.domain-score-badge.scored {
+color: var(–blue);
+border-color: var(–blue);
+background: var(–blue-light);
+}
+.chevron {
+color: var(–text-muted);
+transition: transform 0.25s;
+flex-shrink: 0;
+}
+.domain-inner.open .chevron { transform: rotate(180deg); }
+
+.domain-body {
+display: none;
+padding: 4px 16px 14px;
+background: #fff;
+border-top: 1px solid var(–border);
+}
+.domain-inner.open .domain-body { display: block; }
+
+.option-list { list-style: none; }
+.option-item {
+display: flex;
+align-items: flex-start;
+gap: 10px;
+padding: 8px 10px;
+border-radius: var(–radius-sm);
+cursor: pointer;
+transition: background 0.15s;
+margin: 2px 0;
+}
+.option-item:hover { background: var(–surface2); }
+.option-item input[type=“radio”] { display: none; }
+.option-dot {
+width: 20px;
+height: 20px;
+border-radius: 50%;
+border: 2px solid var(–border);
+flex-shrink: 0;
+margin-top: 1px;
+display: flex;
+align-items: center;
+justify-content: center;
+transition: all 0.15s;
+}
+.option-dot::after {
+content: ‘’;
+width: 8px; height: 8px;
+border-radius: 50%;
+background: #fff;
+opacity: 0;
+transition: opacity 0.15s;
+}
+.option-item.selected .option-dot {
+border-color: var(–blue);
+background: var(–blue);
+}
+.option-item.selected .option-dot::after { opacity: 1; }
+
+.option-score {
+font-family: ‘DM Mono’, monospace;
+font-size: 12px;
+font-weight: 600;
+color: var(–text-muted);
+background: var(–surface2);
+border-radius: 5px;
+padding: 1px 6px;
+flex-shrink: 0;
+margin-top: 2px;
+}
+.option-item.selected .option-score {
+background: var(–blue-light);
+color: var(–blue);
+}
+.option-label {
+font-size: 13.5px;
+color: var(–text-secondary);
+line-height: 1.4;
+}
+.option-item.selected .option-label { color: var(–navy); }
+
+/* Score Panel */
+.score-panel {
+background: var(–surface);
+border: 1px solid var(–border);
+border-top: none;
+padding: 24px;
+}
+.score-display {
+display: flex;
+align-items: center;
+justify-content: space-between;
+background: var(–navy);
+border-radius: var(–radius);
+padding: 20px 24px;
+margin-bottom: 20px;
+}
+.score-label {
+font-size: 13px;
+font-weight: 600;
+letter-spacing: 0.06em;
+text-transform: uppercase;
+color: #94a3b8;
+}
+.score-number {
+font-family: ‘Playfair Display’, serif;
+font-size: 48px;
+color: #fff;
+line-height: 1;
+}
+.score-denom {
+font-size: 22px;
+color: #64748b;
+}
+.score-progress-wrap {
+flex: 1;
+margin: 0 24px;
+}
+.score-progress-track {
+height: 8px;
+background: rgba(255,255,255,0.1);
+border-radius: 99px;
+overflow: hidden;
+}
+.score-progress-fill {
+height: 100%;
+border-radius: 99px;
+transition: width 0.4s cubic-bezier(.4,0,.2,1), background 0.4s;
+width: 0%;
+background: var(–blue);
+}
+.score-domains-completed {
+font-size: 12px;
+color: #64748b;
+margin-top: 6px;
+font-family: ‘DM Mono’, monospace;
+}
+
+/* Interpretation */
+.interpretation {
+border-radius: var(–radius);
+padding: 16px 20px;
+display: none;
+animation: fadeIn 0.3s ease;
+margin-bottom: 16px;
+}
+.interpretation.show { display: flex; align-items: flex-start; gap: 14px; }
+@keyframes fadeIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }
+
+.interp-icon {
+font-size: 24px;
+flex-shrink: 0;
+margin-top: 2px;
+}
+.interp-range {
+font-family: ‘DM Mono’, monospace;
+font-size: 11px;
+font-weight: 600;
+letter-spacing: 0.06em;
+margin-bottom: 3px;
+opacity: 0.7;
+}
+.interp-title {
+font-size: 16px;
+font-weight: 700;
+margin-bottom: 4px;
+}
+.interp-desc {
+font-size: 13px;
+line-height: 1.5;
+opacity: 0.8;
+}
+.interp-red { background: var(–red-light); color: var(–red); }
+.interp-orange { background: var(–orange-light); color: var(–orange); }
+.interp-yellow { background: var(–yellow-light); color: var(–yellow); }
+.interp-green { background: var(–emerald-light); color: var(–emerald); }
+
+/* Action guidance */
+.action-section {
+margin-top: 16px;
+}
+.action-title {
+font-size: 11px;
+font-weight: 700;
+letter-spacing: 0.08em;
+text-transform: uppercase;
+color: var(–text-muted);
+margin-bottom: 10px;
+}
+.action-tags {
+display: flex;
+flex-wrap: wrap;
+gap: 8px;
+}
+.action-tag {
+display: flex;
+align-items: center;
+gap: 6px;
+background: #fff;
+border: 1.5px solid var(–border);
+border-radius: 8px;
+padding: 6px 12px;
+font-size: 12.5px;
+color: var(–text-secondary);
+font-weight: 500;
+transition: all 0.2s;
+}
+.action-tag.active {
+border-color: #f97316;
+color: #c2410c;
+background: #fff7ed;
+}
+.action-tag .dot {
+width: 8px; height: 8px;
+border-radius: 50%;
+background: var(–border);
+transition: background 0.2s;
+}
+.action-tag.active .dot { background: #f97316; }
+
+/* Notes */
+.notes-section {
+background: var(–surface);
+border: 1px solid var(–border);
+border-top: none;
+padding: 20px 24px;
+}
+.notes-label {
+font-size: 11px;
+font-weight: 700;
+letter-spacing: 0.08em;
+text-transform: uppercase;
+color: var(–text-muted);
+margin-bottom: 8px;
+}
+.notes-area {
+width: 100%;
+background: var(–surface2);
+border: 1.5px solid var(–border);
+border-radius: var(–radius-sm);
+padding: 12px;
+font-family: ‘DM Sans’, sans-serif;
+font-size: 14px;
+color: var(–text);
+resize: vertical;
+min-height: 80px;
+outline: none;
+transition: border-color 0.2s;
+}
+.notes-area:focus { border-color: var(–blue); background: #fff; }
+
+/* Footer */
+.footer-card {
+background: #fffbeb;
+border: 1px solid #fde68a;
+border-top: none;
+border-radius: 0 0 var(–radius) var(–radius);
+padding: 14px 24px;
+display: flex;
+align-items: flex-start;
+gap: 10px;
+}
+.footer-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+.footer-text { font-size: 12.5px; color: #92400e; line-height: 1.5; }
+
+/* Print */
+.btn-row {
+display: flex;
+gap: 10px;
+margin-top: 16px;
+flex-wrap: wrap;
+}
+.btn {
+display: inline-flex;
+align-items: center;
+gap: 6px;
+padding: 9px 18px;
+border-radius: var(–radius-sm);
+font-family: ‘DM Sans’, sans-serif;
+font-size: 13px;
+font-weight: 600;
+cursor: pointer;
+border: none;
+transition: all 0.18s;
+}
+.btn-primary { background: var(–navy); color: #fff; }
+.btn-primary:hover { background: var(–navy-light); }
+.btn-ghost { background: var(–surface); color: var(–text-secondary); border: 1.5px solid var(–border); }
+.btn-ghost:hover { border-color: var(–text-muted); color: var(–text); }
+
+.divider {
+height: 1px;
+background: var(–border);
+margin: 0 24px;
+}
+
+@media print {
+body { background: #fff; padding: 0; }
+.btn-row, .btn { display: none !important; }
+.domain-body { display: block !important; }
+.wrapper { max-width: 100%; }
+}
+
+@media (max-width: 480px) {
+.info-grid { grid-template-columns: 1fr; }
+.score-display { flex-direction: column; align-items: flex-start; gap: 16px; }
+.score-progress-wrap { width: 100%; margin: 0; }
+.header-title { font-size: 20px; }
+.score-number { font-size: 38px; }
+}
+</style>
+
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- Header -->
+
+  <div class="header">
+    <div class="header-badge">Clinical Screening Tool</div>
+    <div class="header-title">Robot Gait Readiness <span class="header-abbr">Scoring Tool</span></div>
+    <div class="header-subtitle">EksoNR / R-GAIT / HIWIN &nbsp;·&nbsp; <span style="font-family:'DM Mono',monospace;font-size:12px;">RG-RST v1.0</span></div>
+  </div>
+
+  <!-- Patient Info -->
+
+  <div class="patient-card">
+    <div class="info-grid">
+      <div class="info-group">
+        <label>Patient Name</label>
+        <input type="text" placeholder="Full name" id="patientName">
+      </div>
+      <div class="info-group">
+        <label>HN</label>
+        <input type="text" placeholder="Hospital number" id="hn">
+      </div>
+      <div class="info-group">
+        <label>Date</label>
+        <input type="date" id="date">
+      </div>
+      <div class="info-group">
+        <label>Assessor</label>
+        <input type="text" placeholder="PT name / license no." id="assessor">
+      </div>
+      <div class="info-group" style="grid-column:1/-1">
+        <label>Diagnosis</label>
+        <input type="text" placeholder="e.g. Stroke, SCI, TBI" id="diagnosis">
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Domains -->
+
+  <div class="domains" id="domainsContainer"></div>
+
+  <!-- Score Panel -->
+
+  <div class="score-panel">
+    <div class="score-display">
+      <div>
+        <div class="score-label">Total Score</div>
+        <div>
+          <span class="score-number" id="totalScore">0</span>
+          <span class="score-denom">/24</span>
+        </div>
+      </div>
+      <div class="score-progress-wrap">
+        <div class="score-progress-track">
+          <div class="score-progress-fill" id="progressFill"></div>
+        </div>
+        <div class="score-domains-completed" id="domainsCompleted">0 / 8 domains scored</div>
+      </div>
+    </div>
+
+```
+<!-- Interpretations -->
+<div class="interpretation interp-red" id="interp-red">
+  <div class="interp-icon">🔴</div>
+  <div>
+    <div class="interp-range">SCORE 0 – 10</div>
+    <div class="interp-title">Not Ready for Robot-Assisted Gait Training</div>
+    <div class="interp-desc">Recommend pre-rehabilitation program focusing on ROM, trunk control, and cardiopulmonary endurance before reassessment.</div>
+  </div>
+</div>
+<div class="interpretation interp-orange" id="interp-orange">
+  <div class="interp-icon">🟠</div>
+  <div>
+    <div class="interp-range">SCORE 11 – 16</div>
+    <div class="interp-title">Conditional Readiness</div>
+    <div class="interp-desc">Requires high assistance and close monitoring. Short-duration sessions recommended with careful vital sign surveillance.</div>
+  </div>
+</div>
+<div class="interpretation interp-yellow" id="interp-yellow">
+  <div class="interp-icon">🟡</div>
+  <div>
+    <div class="interp-range">SCORE 17 – 21</div>
+    <div class="interp-title">Suitable Candidate</div>
+    <div class="interp-desc">Standard robot-assisted gait training recommended. Select device based on primary goal and neuro control level.</div>
+  </div>
+</div>
+<div class="interpretation interp-green" id="interp-green">
+  <div class="interp-icon">🟢</div>
+  <div>
+    <div class="interp-range">SCORE 22 – 24</div>
+    <div class="interp-title">Optimal Candidate</div>
+    <div class="interp-desc">High-intensity robotic gait training possible. Consider progressive challenge and functional goal setting.</div>
+  </div>
+</div>
+
+<!-- Action Guidance -->
+<div class="action-section">
+  <div class="action-title">Clinical Action Guidance</div>
+  <div class="action-tags">
+    <div class="action-tag" id="act-rom">
+      <span class="dot"></span> ROM limitation → Stretching / Positioning
+    </div>
+    <div class="action-tag" id="act-trunk">
+      <span class="dot"></span> Trunk instability → Sitting Balance Training
+    </div>
+    <div class="action-tag" id="act-endurance">
+      <span class="dot"></span> Low endurance → Graded Aerobic Conditioning
+    </div>
+    <div class="action-tag" id="act-motivation">
+      <span class="dot"></span> Low motivation → Education + Visual Feedback
+    </div>
+    <div class="action-tag" id="act-medical">
+      <span class="dot"></span> Medical instability → Stabilize Vitals First
+    </div>
+  </div>
+</div>
+
+<div class="btn-row">
+  <button class="btn btn-primary" onclick="window.print()">
+    🖨️ Print / Save PDF
+  </button>
+  <button class="btn btn-ghost" onclick="resetAll()">
+    ↺ Reset Form
+  </button>
+</div>
+```
+
+  </div>
+
+  <!-- Notes -->
+
+  <div class="notes-section">
+    <div class="notes-label">Additional Notes</div>
+    <textarea class="notes-area" placeholder="Clinical observations, device selection rationale, follow-up plan..."></textarea>
+  </div>
+
+  <!-- Footer -->
+
+  <div class="footer-card">
+    <div class="footer-icon">⚠️</div>
+    <div class="footer-text">
+      <strong>Clinical Use Statement:</strong> This tool is designed to assist clinical decision-making for robot-assisted gait training. Final decision should be made by the multidisciplinary rehabilitation team.
+    </div>
+  </div>
+
+</div>
+
+<script>
+const domains = [
+  {
+    id: 'motivation',
+    name: 'Motivation & Engagement',
+    options: [
+      { score: 0, label: 'Refuses participation / non-cooperative' },
+      { score: 1, label: 'Reluctant, requires high encouragement' },
+      { score: 2, label: 'Cooperative, willing to try' },
+      { score: 3, label: 'Highly motivated, actively requests walking training' },
+    ],
+    actionId: 'act-motivation'
+  },
+  {
+    id: 'rom',
+    name: 'Lower Limb Functional ROM (Hip / Knee / Ankle)',
+    options: [
+      { score: 0, label: 'Severe limitation, not compatible with robot' },
+      { score: 1, label: 'Significant limitation, requires pre-stretching / high assistance' },
+      { score: 2, label: 'Functional with device adjustment' },
+      { score: 3, label: 'Adequate ROM for safe training' },
+    ],
+    actionId: 'act-rom'
+  },
+  {
+    id: 'trunk',
+    name: 'Trunk Control',
+    options: [
+      { score: 0, label: 'Unable to sit independently' },
+      { score: 1, label: 'Requires continuous support' },
+      { score: 2, label: 'Independent sitting with sway' },
+      { score: 3, label: 'Stable trunk control' },
+    ],
+    actionId: 'act-trunk'
+  },
+  {
+    id: 'motor',
+    name: 'Motor Control / Lower Limb Coordination',
+    options: [
+      { score: 0, label: 'No voluntary control / severe spasticity' },
+      { score: 1, label: 'Poor selective control, synergy dominance' },
+      { score: 2, label: 'Partial selective control' },
+      { score: 3, label: 'Good voluntary stepping initiation' },
+    ],
+    actionId: null
+  },
+  {
+    id: 'cardio',
+    name: 'Cardiopulmonary Endurance',
+    options: [
+      { score: 0, label: 'Unable to tolerate sitting/standing activity' },
+      { score: 1, label: 'Tolerates 5–10 minutes activity' },
+      { score: 2, label: 'Tolerates 10–20 minutes activity' },
+      { score: 3, label: 'Tolerates >20–30 minutes activity' },
+    ],
+    actionId: 'act-endurance'
+  },
+  {
+    id: 'cognition',
+    name: 'Cognition & Communication',
+    options: [
+      { score: 0, label: 'Unable to follow commands' },
+      { score: 1, label: 'Inconsistent response to simple commands' },
+      { score: 2, label: 'Able to follow commands' },
+      { score: 3, label: 'Good communication and symptom reporting' },
+    ],
+    actionId: null
+  },
+  {
+    id: 'medical',
+    name: 'Medical Stability / Safety',
+    options: [
+      { score: 0, label: 'Hemodynamically unstable / severe orthostatic hypotension' },
+      { score: 1, label: 'Borderline stability' },
+      { score: 2, label: 'Stable with precautions' },
+      { score: 3, label: 'Fully stable' },
+    ],
+    actionId: 'act-medical'
+  },
+  {
+    id: 'device',
+    name: 'Body & Device Compatibility',
+    options: [
+      { score: 0, label: 'Cannot be safely fitted into device' },
+      { score: 1, label: 'Difficult fitting / high risk setup' },
+      { score: 2, label: 'Usable with adjustments' },
+      { score: 3, label: 'Safe and smooth device setup' },
+    ],
+    actionId: null
+  },
+];
+
+const scores = {};
+
+function buildDomains() {
+  const container = document.getElementById('domainsContainer');
+  domains.forEach((d, i) => {
+    const domainEl = document.createElement('div');
+    domainEl.className = 'domain';
+    domainEl.innerHTML = `
+      <div class="domain-inner" id="inner-${d.id}">
+        <div class="domain-header" onclick="toggleDomain('${d.id}')">
+          <span class="domain-num">${String(i+1).padStart(2,'0')}</span>
+          <span class="domain-name">${d.name}</span>
+          <span class="domain-score-badge" id="badge-${d.id}">— /3</span>
+          <svg class="chevron" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </div>
+        <div class="domain-body">
+          <ul class="option-list">
+            ${d.options.map(opt => `
+              <li class="option-item" id="opt-${d.id}-${opt.score}" onclick="selectOption('${d.id}', ${opt.score})">
+                <div class="option-dot"></div>
+                <span class="option-score">${opt.score}</span>
+                <span class="option-label">${opt.label}</span>
+              </li>
+            `).join('')}
+          </ul>
+        </div>
+      </div>
+    `;
+    container.appendChild(domainEl);
+    // Open first domain
+    if (i === 0) toggleDomain(d.id);
+  });
+}
+
+function toggleDomain(id) {
+  const inner = document.getElementById('inner-' + id);
+  inner.classList.toggle('open');
+}
+
+function selectOption(domainId, score) {
+  scores[domainId] = score;
+  // Update UI options
+  const domain = domains.find(d => d.id === domainId);
+  domain.options.forEach(opt => {
+    const el = document.getElementById(`opt-${domainId}-${opt.score}`);
+    el.classList.toggle('selected', opt.score === score);
+  });
+  // Update badge
+  const badge = document.getElementById('badge-' + domainId);
+  badge.textContent = `${score} /3`;
+  badge.classList.add('scored');
+
+  // Auto-advance to next domain
+  const idx = domains.findIndex(d => d.id === domainId);
+  if (idx < domains.length - 1) {
+    const nextId = domains[idx + 1].id;
+    const nextInner = document.getElementById('inner-' + nextId);
+    if (!nextInner.classList.contains('open')) {
+      setTimeout(() => toggleDomain(nextId), 200);
+    }
+  }
+
+  updateScore();
+}
+
+function updateScore() {
+  const completed = Object.keys(scores).length;
+  const total = Object.values(scores).reduce((a, b) => a + b, 0);
+
+  document.getElementById('totalScore').textContent = total;
+  document.getElementById('domainsCompleted').textContent = `${completed} / 8 domains scored`;
+
+  const pct = (total / 24) * 100;
+  const fill = document.getElementById('progressFill');
+  fill.style.width = pct + '%';
+
+  // Color
+  if (total <= 10) fill.style.background = '#dc2626';
+  else if (total <= 16) fill.style.background = '#ea580c';
+  else if (total <= 21) fill.style.background = '#ca8a04';
+  else fill.style.background = '#059669';
+
+  // Interpretations
+  ['red','orange','yellow','green'].forEach(c => {
+    document.getElementById('interp-' + c).classList.remove('show');
+  });
+  if (completed > 0) {
+    if (total <= 10) document.getElementById('interp-red').classList.add('show');
+    else if (total <= 16) document.getElementById('interp-orange').classList.add('show');
+    else if (total <= 21) document.getElementById('interp-yellow').classList.add('show');
+    else document.getElementById('interp-green').classList.add('show');
+  }
+
+  // Action tags
+  domains.forEach(d => {
+    if (d.actionId) {
+      const tag = document.getElementById(d.actionId);
+      const sc = scores[d.id];
+      tag.classList.toggle('active', sc !== undefined && sc <= 1);
+    }
+  });
+}
+
+function resetAll() {
+  if (!confirm('Reset all scores?')) return;
+  Object.keys(scores).forEach(k => delete scores[k]);
+  domains.forEach(d => {
+    d.options.forEach(opt => {
+      document.getElementById(`opt-${d.id}-${opt.score}`).classList.remove('selected');
+    });
+    const badge = document.getElementById('badge-' + d.id);
+    badge.textContent = '— /3';
+    badge.classList.remove('scored');
+    document.getElementById('inner-' + d.id).classList.remove('open');
+  });
+  toggleDomain(domains[0].id);
+  updateScore();
+  ['patientName','hn','date','assessor','diagnosis'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.querySelector('.notes-area').value = '';
+}
+
+// Set today's date
+document.getElementById('date').valueAsDate = new Date();
+buildDomains();
+updateScore();
+</script>
+
+</body>
+</html>
